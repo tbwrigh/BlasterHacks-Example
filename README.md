@@ -16,6 +16,9 @@ Jump to any of the following sections:
 - [Project Set Up](#project-set-up)
   - [Making a Github Repo](#making-the-github-repository)
   - [Sharing the Repo](#sharing-the-repo)
+  - [Cloning the Repo](#cloning-the-repo)
+  - [Making Your First Commit](#lets-make-our-first-commits)
+
 # Tools
 
 Before we get started with our super cool project, there are some helpful tools that will set your team up for success.
@@ -303,4 +306,81 @@ In my case it is:
 ```bash
 git clone git@github.com:tbwrigh/BlasterHacks-Example.git
 ```
+
+## Let's Make Our First Commits
+
+So we haev this fancy git repo, what now? Well we make changes and track them here. Let's start adding our names to the README.
+
+First, let's open the repository in VSCode. Then open the README.md file and add your name.
+
+Then open a terminal (I'd strongly reccomend utilizing the VSCode built in terminal. You can open it by hitting the new terminal option under the terminal menu for the application.), and run through the following processes.
+
+### Staging Our Changes (git add)
+
+The first step in tracking our changes is staging them. This prepares them to be committed but if we need to make additional changes we can here. Additionally we can choose to stage certain changes and not stage others. If we edited 2 files, we can stage one to be tracked. To do this we can run:
+
+```bash
+git add <filename>
+```
+
+If you want to stage everything run the following commands from the base folder of the repo.
+
+```bash
+git add .
+```
+
+So to stage just the README run:
+
+```bash
+git add README.md
+```
+
+### Commit the Changes (git commit)
+
+Now that we have our README staged, we need to commit the change. This will save it in our repository as a tracked change. Additionally when we track our changes, we leave a message that can help us figure out what we did more quickly when we are looking back on our changes. To do this we will run:
+
+```bash
+git commit -m "<My Message>"
+```
+
+### Pushing the Change(s) (git push)
+
+The whole point of GitHub is to share our code, so how does our team get these changes? We push them to GitHub. To do this we will run:
+
+```bash
+git push <remote> <branch>
+```
+
+By default, the remote for a repo is `origin` and the default branch is `main`. So our default command to push would be:
+
+```bash
+git push origin main
+```
+
+Fortunately, our defaults tend to be automatically picked up, so we should be able to just run:
+
+```bash
+git push
+```
+
+
+### Getting Other People's Changes
+
+So now the changes are in GitHub but our teammates didn't automatically recieve the changes. To get the changes they need to pull. To do that, you can run:
+
+```
+git pull
+```
+
+Now, sometimes you might run into a small issue: a merge conflict. 
+
+<details>
+
+<summary>More About Merge Conflicts</summary>
+
+Merge conflicts occur when you have committed a change locally and try to pull a change that conflicts with the change you have locally. You can resolve merge conflicts with VSCode. Resolving merge conflicts is often considered a challenge for beginners, but all you really have to do is look at the conflicting blocks of code and keep whatever parts you want. Sometimes you may want to keep parts of both, so you can delete some parts of each and keep parts of each. 
+
+If you want more details about merge conflicts and resolving them, checkout [this video](https://www.youtube.com/watch?v=HosPml1qkrg).
+
+</details>
 
