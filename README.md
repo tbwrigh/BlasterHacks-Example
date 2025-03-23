@@ -13,7 +13,9 @@ Jump to any of the following sections:
   - [Visual Studio Code](#visual-studio-code)
   - [Python](#python)
   - [Docker (advanced)](#docker-advanced)
-
+- [Project Set Up](#project-set-up)
+  - [Making a Github Repo](#making-the-github-repository)
+  - [Sharing the Repo](#sharing-the-repo)
 # Tools
 
 Before we get started with our super cool project, there are some helpful tools that will set your team up for success.
@@ -238,3 +240,67 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 ```
 
 </details>
+
+# Project Set Up
+
+## Making the GitHub repository
+
+On the Github Home Page hit the green new button.
+
+![Github Add Button](reference-images/github-home.png)
+
+Now fill out the creation screen.
+
+![New Repo Form](reference-images/new-repo.png)
+
+Make sure owner shows your name. Set a good name for your project, whether it be `BlasterHacks25` or something similar or the name of your actual project. Optionally add a description of your project. For the 3 sections below description, make sure your selections match mine: Public, Add a README file, and add .gitignore template: Python.
+
+## Sharing the Repo
+
+For the easiest time collaboration you will want to share the repo with your team. To do that that, from the repo home page, click the settings tab. 
+
+In the settings tab, click collaborators on the left side menu. Then hit the add people button and search for your teammates github usernames.
+
+![Share Repo button](reference-images/share-repo.png)
+
+Now your teammates need to accept the invitation. To do that, they should go to their notifications tab in github, click on the invite notification, then accept the invitation.
+
+![Notification Button](reference-images/notification-button.png)
+
+![Notification List](reference-images/notification-list.png)
+
+![Accept Invitation](reference-images/accept-invite.png)
+
+Now our Repo is set up in GitHub.
+
+## Cloning The Repo
+
+If you just installed git, you will need to set up SSH keys to be able to interact with your repository.
+
+<details>
+<summary>Set Up SSH Keys for Github</summary>
+
+Setting up SSH keys for GitHub isn't too hard.
+
+First you need to generate SSH Keys, which GitHub already has a great write up on [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=mac). For this write up, make sure you select the tab for your operating system.
+
+Second, once you have generated your SSH keys you need to add them to your GitHub account, which also has a thorough write up from GitHub [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
+
+</details>
+
+Now that you presumably have your keys, we need to the remote endpoint from GitHub. To do that, we will go to the repo's home page, click the green code button button, make sure we are on the SSH tab, and click the copy icon.
+
+![Code Button](reference-images/code.png)
+
+Now to clone the repo we are going to open a terminal (or Powershell in Windows) in our Documents folder. Then we will run:
+
+```bash
+git clone <SSH Reference>
+```
+
+In my case it is:
+
+```bash
+git clone git@github.com:tbwrigh/BlasterHacks-Example.git
+```
+
