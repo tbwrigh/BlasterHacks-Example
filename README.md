@@ -12,12 +12,18 @@ Jump to any of the following sections:
   - [Git](#git)
   - [Visual Studio Code](#visual-studio-code)
   - [Python](#python)
+  - [Node.js](#nodejs)
   - [Docker (advanced)](#docker-advanced)
 - [Project Set Up](#project-set-up)
   - [Making a Github Repo](#making-the-github-repository)
   - [Sharing the Repo](#sharing-the-repo)
   - [Cloning the Repo](#cloning-the-repo)
   - [Making Your First Commit](#lets-make-our-first-commits)
+- [Coding the Backend](#coding-the-backend)
+  - [Set Up a Virtual Environment](#set-up-a-virtual-environment)
+  - [Install Dependencies](#install-our-dependencies)
+- [Coding the Frontend](#coding-the-frontend)
+  - [Expanding our Gitignore](#expanding-our-gitignore)
 
 # Tools
 
@@ -422,4 +428,96 @@ Merge conflicts occur when you have committed a change locally and try to pull a
 If you want more details about merge conflicts and resolving them, checkout [this video](https://www.youtube.com/watch?v=HosPml1qkrg).
 
 </details>
+
+# Coding the Backend
+
+First, let's start by making a backend folder in the root of our repository. Additionally let's add a file called `main.py` inside the backend folder.
+
+## Set up a Virtual Environment
+
+Python uses Virtual Environments to manage dependencies for each project. In our backend folder we will want to run:
+
+```bash
+python3 -m venv venv
+```
+
+Then to activate the virtual environment is run the following command for your system.
+
+<details>
+
+<summary>For Linux or Mac</summary>
+
+Run:
+
+```bash
+source venv/bin/activate
+```
+
+</details>
+
+<details>
+
+<summary>For Windows</summary>
+
+Run:
+
+```ps1
+.\venv\bin\Activate.ps1
+```
+
+If you run into an issue but not being allowed to run powershell scripts, in an admin powershell run:
+
+```ps1
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+</details>
+
+## Install Our Dependencies
+
+Our main web server will be built with FastAPI. To install FastAPI run:
+
+```bash
+pip install "fastapi[standard]"
+```
+
+We should track our Python dependencies. To do that we can run:
+
+```bash
+pip freeze > requirements.txt
+```
+
+If we wanted to install the dependencies tracked in the requirements.txt we can run:
+
+```bash
+pip install -r requirements.txt
+```
+
+# Coding the Frontend
+
+## Expanding our gitignore
+
+We used the python template for our gitignore when we made the repo, but now we need to add the relevant gitignore items for Node.js. To do that, let's copy the contents of [this file](https://github.com/github/gitignore/blob/main/Node.gitignore) and paste it to the bottom of our gitignore.
+
+## Start our Sveltekit project
+
+From the root of our git repo, run:
+
+```bash
+npx sv create frontend
+```
+
+In the creation options, select:
+- SvelteKit Minimal
+- Yes, using TypeScript syntax
+- Tailwindcss
+- The typography plugin
+- npm
+
+Enter the frontend folder and run:
+
+```bash
+npm install
+```
+
 
