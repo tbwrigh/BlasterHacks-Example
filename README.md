@@ -181,6 +181,45 @@ sudo apt install python3 python3-pip
 
 </details>
 
+## Node.js
+
+Node.js is a very useful tool for building frontend projects. We are going to use it in our example project as well. Install it from the [official website](https://nodejs.org/en/download).
+
+Or install from the command line based on your operating system.
+
+<details> 
+<summary>Windows</summary>
+
+In powershell run:
+
+```ps1
+winget install -e --id OpenJS.NodeJS
+```
+
+</details>
+
+<details> 
+<summary>Mac</summary>
+
+In your terminal run:
+
+```bash
+brew install node
+```
+
+</details>
+
+<details> 
+<summary>Linux</summary>
+
+In your terminal run:
+
+```bash
+sudo apt install nodejs
+```
+
+</details>
+
 ## Docker (Advanced)
 
 Docker is a really cool tool used in industry for consistency, security, and scalability. Throughout this tutorial I will show the development process of this project with and without Docker. Docker will make our lives easier in a lot of ways, but it is another layer of complexity, so while I'd reccomend following the tutorial with it, feel free to skip it. Download it from the [official website](https://www.docker.com/get-started/) by hitting the download docker desktop button.  
