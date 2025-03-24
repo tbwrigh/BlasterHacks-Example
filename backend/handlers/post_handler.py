@@ -58,3 +58,28 @@ async def create_comment(request: Request, create_comment_request: CreateComment
         status_code=200,
         content={"message": "Comment created"}
     )
+
+@router.get("/")
+async def get_posts(request: Request):
+    """
+    Get all posts
+    """
+    
+    with Session(request.app.state.db) as session:
+        posts = session.query(Post).all()
+        posts = [{
+            "title": post.title,
+            "content": post.content,
+            "author": post.user.name,
+            "post_id": post.id,
+            "comments": [{
+                "content": comment.content,
+                "author": comment.user.name,
+                "comment_id": comment.id
+                } for comment in post.comments]
+            } for post in posts]
+
+    return JSONResponse(
+        status_code=200,
+        content={"posts": posts}
+    )

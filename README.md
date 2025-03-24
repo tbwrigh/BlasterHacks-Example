@@ -30,6 +30,13 @@ Jump to any of the following sections:
   - [Backend Docker Set Up](#set-up-docker-for-backend)
   - [Connecting to the DB](#connect-to-our-database)
   - [CORS](#dealing-with-cors)
+  - [Our First Controller](#our-first-controller)
+    - [Finishing /register](#finishing-register)
+    - [Finishing /login](#finishing-login)
+  - [Post and Comment Models](#post-and-comment-models)
+  - [Set Up Post Controller](#set-up-the-post-controller)
+    - [Checking Auth](#checking-auth)
+    - [Get Posts](#get-post-endpoint)
 - [Coding the Frontend](#coding-the-frontend)
   - [Expanding our Gitignore](#expanding-our-gitignore)
   - [Start Our SvelteKit Project](#start-our-sveltekit-project)
@@ -916,6 +923,7 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     user = relationship("User", back_populates="posts")
+    comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
 
 class Comment(Base):
     __tablename__ = 'comments'
@@ -929,7 +937,14 @@ class Comment(Base):
     post = relationship("Post", back_populates="comments")
 ```
 
-We also need to add some improts. Add:
+Additionally, we need to add the following to the User model:
+
+```python
+    posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+```
+
+We also need to add some imports. Add:
 
 ```python
 from sqlalchemy import ForeignKey
@@ -1136,6 +1151,39 @@ async def create_comment(request: Request, create_comment_request: CreateComment
     return JSONResponse(
         status_code=200,
         content={"message": "Comment created"}
+    )
+```
+
+### Get Post Endpoint
+
+We need to be able to retrieve all the posts to display them.
+
+To do this add the following to our post handler:
+
+```python
+@router.get("/")
+async def get_posts(request: Request):
+    """
+    Get all posts
+    """
+    
+    with Session(request.app.state.db) as session:
+        posts = session.query(Post).all()
+        posts = [{
+            "title": post.title,
+            "content": post.content,
+            "author": post.user.name,
+            "post_id": post.id,
+            "comments": [{
+                "content": comment.content,
+                "author": comment.user.name,
+                "comment_id": comment.id
+                } for comment in post.comments]
+            } for post in posts]
+
+    return JSONResponse(
+        status_code=200,
+        content={"posts": posts}
     )
 ```
 
