@@ -23,7 +23,6 @@
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             if (data.token != null) {
                 user.set(data.token);
                 goto('/');

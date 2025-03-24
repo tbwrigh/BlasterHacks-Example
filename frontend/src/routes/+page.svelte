@@ -28,7 +28,6 @@
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             getPosts();
             newPostContent = "";
             newPostTitle = "";
@@ -49,7 +48,6 @@
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             getPosts();
             newComments[id] = "";
         });
@@ -64,7 +62,6 @@
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             posts = data.posts;
         });
     }

@@ -8,8 +8,6 @@
 		user.set(null);
 		window.location.href = '/';
 	};
-
-	console.log($user);
 </script>
 
 <div class="flex flex-col min-h-screen">

@@ -11,10 +11,6 @@
     }
 
 	const handleSubmit = () => {
-		console.log('Email:', email);
-		console.log('Password:', password);
-        console.log('Username:', username);
-
         fetch('http://localhost:8000/user/register', {
             method: 'POST',
             headers: {

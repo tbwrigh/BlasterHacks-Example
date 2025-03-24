@@ -1348,8 +1348,6 @@ In the routes folder, we have `+layout.svelte` which we should put the following
 		user.set(null);
 		window.location.href = '/';
 	};
-
-	console.log($user);
 </script>
 
 <div class="flex flex-col min-h-screen">
@@ -1414,7 +1412,6 @@ We will make a folder under routes called login, under there make a file called 
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             if (data.token != null) {
                 user.set(data.token);
                 goto('/');
@@ -1480,11 +1477,6 @@ To add the signup page we will make a signup folder under the routes folder and 
     }
 
 	const handleSubmit = () => {
-		console.log('Email:', email);
-		console.log('Password:', password);
-        console.log('Username:', username);
-
-        // Send the data to the server
         fetch('http://localhost:8000/user/register', {
             method: 'POST',
             headers: {
@@ -1595,7 +1587,6 @@ On the `+page.svelte` in the routes folder, make it contain the following:
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             getPosts();
             newPostContent = "";
             newPostTitle = "";
@@ -1616,7 +1607,6 @@ On the `+page.svelte` in the routes folder, make it contain the following:
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             getPosts();
             newComments[id] = "";
         });
@@ -1631,7 +1621,6 @@ On the `+page.svelte` in the routes folder, make it contain the following:
         })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data)
             posts = data.posts;
         });
     }
