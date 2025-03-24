@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 
 from handlers import user_handler, post_handler
 
-DB_URL = "sqlite:///./app.db"
+DB_URL = "postgresql+psycopg2://postgres:password@db/postgres"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

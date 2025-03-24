@@ -530,31 +530,17 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## Install Our Dependencies
 
-Our main web server will be built with FastAPI. To install FastAPI run:
+In our backend folder, make a file called `requirements.txt` with the following contents:
 
-```bash
-pip install "fastapi[standard]"
+```
+fastapi[standard]
+sqlalchemy
+alembic
+pyjwt
+psycopg2-binary
 ```
 
-We also will use SQLAlchemy and Alembic to manage our database. To install these we can run:
-
-```bash
-pip install sqlalchemy alembic
-```
-
-We will also use PyJWT to make and verify JWTs. To install it run:
-
-```bash
-pip install pyjwt
-```
-
-We should track our Python dependencies. To do that we can run:
-
-```bash
-pip freeze > requirements.txt
-```
-
-If we wanted to install the dependencies tracked in the requirements.txt we can run:
+Then install it with:
 
 ```bash
 pip install -r requirements.txt
@@ -683,7 +669,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 COPY . /code
 
 # Run app.py when the container launches
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 Then in our `docker-compose.yml` we need to add some entries under services:
