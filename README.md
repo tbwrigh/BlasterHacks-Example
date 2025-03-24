@@ -41,6 +41,12 @@ Jump to any of the following sections:
 - [Coding the Frontend](#coding-the-frontend)
   - [Expanding our Gitignore](#expanding-our-gitignore)
   - [Start Our SvelteKit Project](#start-our-sveltekit-project)
+  - [Install Flowbite](#installing-flowbite)
+  - [State Tracking for Auth](#add-an-auth-state-item)
+  - [Defining our Layout](#set-up-our-layout)
+  - [Login Page](#add-the-login-page)
+  - [Sign Up Page](#add-the-sign-up-page)
+  - [Home Page](#make-the-home-page)
 
 # Tools
 
@@ -1313,7 +1319,398 @@ Then to `app.css` inside the src folder in the frontend folder, we need to add:
 @source "../node_modules/flowbite-svelte/dist";
 ```
 
+## Add an Auth State Item
 
+We need a way to keep track of if we have a token or not.
 
+To do this in the src folder we will make a folder called stores. Inside that folder make a file called `auth.ts`.
 
+In `auth.ts` add the following:
+
+```ts
+import { writable } from 'svelte/store';
+
+export const user = writable(null);
+```
+
+## Set Up Our Layout
+
+In the routes folder, we have `+layout.svelte` which we should put the following to make our nav bar and footer.
+
+```svelte
+<script>
+	import '../app.css';
+	let { children } = $props();
+	import { Navbar, NavBrand, NavUl, NavLi } from 'flowbite-svelte';
+	import { user } from '../stores/auth';
+
+	const logout = () => {
+		user.set(null);
+		window.location.href = '/';
+	};
+
+	console.log($user);
+</script>
+
+<div class="flex flex-col min-h-screen">
+	<header class="flex-none">
+		<Navbar class="h-16">
+			<NavBrand href="/">
+				<img src="/logo.svg" class="mr-3 h-6 sm:h-9" alt="Logo" />
+				<span class="self-center whitespace-nowrap text-xl font-semibold">My App</span>
+			</NavBrand>
+			<NavUl>
+				<NavLi href="/">Home</NavLi>
+				{#if $user != null}
+					<NavLi on:click={logout} href="/">Logout</NavLi>
+				{:else}
+					<NavLi href="/login">Login</NavLi>
+				{/if}
+			</NavUl>
+		</Navbar>
+	</header>
+
+	<div class="flex flex-col flex-1">
+		<main class="flex-1 container mx-auto h-full">
+			{@render children()}
+		</main>
+
+		<footer class="flex-none bg-gray-200 py-6">
+			<div class="container mx-auto text-center text-gray-600">
+				© {new Date().getFullYear()} My App. All rights reserved.
+			</div>
+		</footer>
+	</div>
+</div>
+```
+
+## Add the Login Page
+
+We will make a folder under routes called login, under there make a file called `+page.svelte`. We have now defined our /login page. In this file add the following contents:
+
+```svelte
+<script lang="ts">
+	let email = '';
+	let password = '';
+
+    import { user } from '../../stores/auth';
+    import { goto } from '$app/navigation';
+
+    if ($user) {
+        goto('/');
+    }
+
+	const handleSubmit = () => {
+        fetch('http://localhost:8000/user/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify
+            ({
+                email: email,
+                password: password
+            })
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data)
+            if (data.token != null) {
+                user.set(data.token);
+                goto('/');
+            } else {
+                alert(data.message);
+            }
+        })
+	};
+</script>
+
+<div class="h-full flex items-center justify-center">
+	<div class="w-full max-w-md bg-white rounded-lg shadow-md p-8 border border-gray-200">
+		<h2 class="text-2xl font-semibold text-center mb-6">Login</h2>
+		<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+			<div>
+				<label class="block text-sm font-medium text-gray-700">Email</label>
+				<input
+					type="email"
+					bind:value={email}
+					required
+					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700">Password</label>
+				<input
+					type="password"
+					bind:value={password}
+					required
+					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+			<button
+				type="submit"
+				class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+			>
+				Login
+			</button>
+		</form>
+		<p class="text-sm text-gray-600 mt-6 text-center">
+			Don't have an account?
+			<a href="/signup" class="text-blue-500 hover:underline">Sign up</a>
+		</p>
+	</div>
+</div>
+```
+
+## Add the Sign Up Page
+
+To add the signup page we will make a signup folder under the routes folder and add a `+page.svelte` inside of it. To this file we should put:
+
+```svelte
+<script lang="ts">
+	let email = '';
+	let password = '';
+    let username = '';
+
+    import { user } from '../../stores/auth';
+    import { goto } from '$app/navigation';
+
+    if ($user) {
+        goto('/');
+    }
+
+	const handleSubmit = () => {
+		console.log('Email:', email);
+		console.log('Password:', password);
+        console.log('Username:', username);
+
+        // Send the data to the server
+        fetch('http://localhost:8000/user/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify
+            ({
+                email: email,
+                password: password,
+                username: username
+            })
+        })
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                return { error: true, message: 'An error occurred. Please try again.' };
+            }
+        }).then((data) => {
+            if (data.error) {
+                alert(data.message);
+            } else {
+                goto('/login');
+            }
+        });
+        
+	};
+</script>
+
+<div class="h-full flex items-center justify-center">
+	<div class="w-full max-w-md bg-white rounded-lg shadow-md p-8 border border-gray-200">
+		<h2 class="text-2xl font-semibold text-center mb-6">Sign Up</h2>
+		<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+			<div>
+				<label class="block text-sm font-medium text-gray-700">Email</label>
+				<input
+					type="email"
+					bind:value={email}
+					required
+					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+            <div>
+				<label class="block text-sm font-medium text-gray-700">Username</label>
+				<input
+					type="text"
+					bind:value={username}
+					required
+					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-gray-700">Password</label>
+				<input
+					type="password"
+					bind:value={password}
+					required
+					class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+			<button
+				type="submit"
+				class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+			>
+				Login
+			</button>
+		</form>
+		<p class="text-sm text-gray-600 mt-6 text-center">
+			Already have an account?
+			<a href="/login" class="text-blue-500 hover:underline">Login</a>
+		</p>
+	</div>
+</div>
+```
+
+## Make the Home Page
+
+On the `+page.svelte` in the routes folder, make it contain the following:
+
+```svelte
+<script>
+    import { goto } from '$app/navigation';
+    import { user } from '../stores/auth';
+
+    import { onMount } from 'svelte';
+
+    let posts = [];
+
+    onMount(() => {
+        getPosts();
+    });
+
+    let newPostTitle = "";
+    let newPostContent = "";
+    let newComments = {};
+
+    function addPost() {
+        fetch('http://localhost:8000/post/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${$user}`
+            },
+            body: JSON.stringify({
+                title: newPostTitle,
+                content: newPostContent
+            })
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data)
+            getPosts();
+            newPostContent = "";
+            newPostTitle = "";
+        });
+    }
+
+    function addComment(id) {
+        fetch(`http://localhost:8000/post/comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${$user}`
+            },
+            body: JSON.stringify({
+                post_id: id,
+                content: newComments[id]
+            })
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data)
+            getPosts();
+            newComments[id] = "";
+        });
+    }
+
+    function getPosts() {
+        fetch('http://localhost:8000/post/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data)
+            posts = data.posts;
+        });
+    }
+</script>
+  
+<main class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-4">Posts</h1>
+    
+    {#if $user != null}
+    <div class="mb-6">
+      <div class="flex items-center space-x-2">
+        <input
+          type="text"
+          placeholder="New post title"
+          bind:value={newPostTitle}
+          class="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="text"
+          placeholder="New post content"
+          bind:value={newPostContent}
+          class="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-grow"
+        />
+        <button
+          on:click={addPost}
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+    {/if}
+
+    {#if posts.length === 0}
+    <p class="text-gray-500">Loading posts...</p>
+  {:else}
+    <div class="space-y-6">
+      {#each posts as post}
+        <div class="w-full bg-white border border-gray-200 rounded-lg shadow hover:shadow-lg transition duration-300 dark:bg-gray-800 dark:border-gray-700">
+          <div class="p-5">
+            <h2 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{post.title}</h2>
+            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">{post.content}</p>
+            <p class="text-sm text-gray-500">Author: {post.author}</p>
+
+            {#if $user != null}
+            <div class="mt-4 flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Add a comment"
+                bind:value={newComments[post.post_id]}
+                class="border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-500 flex-grow"
+              />
+              <button
+                on:click={() => addComment(post.post_id)}
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Comment
+              </button>
+            </div>
+            {/if}
+
+            {#if post.comments && post.comments.length > 0}
+              <div class="mt-4 border-t border-gray-200 pt-4">
+                <h3 class="text-xl font-semibold mb-2">Comments</h3>
+                <ul class="space-y-4">
+                  {#each post.comments as comment}
+                    <li class="bg-gray-50 p-3 rounded-lg dark:bg-gray-700">
+                      <p class="text-gray-700 dark:text-gray-300">{comment.content}</p>
+                      <p class="text-xs text-gray-500">- {comment.author}</p>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+  </main>
+```
 

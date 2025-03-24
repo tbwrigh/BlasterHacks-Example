@@ -13,7 +13,6 @@
 </script>
 
 <div class="flex flex-col min-h-screen">
-	<!-- Header (Navbar) -->
 	<header class="flex-none">
 		<Navbar class="h-16">
 			<NavBrand href="/">
@@ -31,14 +30,11 @@
 		</Navbar>
 	</header>
 
-	<!-- Main + Footer Container -->
 	<div class="flex flex-col flex-1">
-		<!-- Main Content with full height -->
 		<main class="flex-1 container mx-auto h-full">
 			{@render children()}
 		</main>
 
-		<!-- Footer -->
 		<footer class="flex-none bg-gray-200 py-6">
 			<div class="container mx-auto text-center text-gray-600">
 				© {new Date().getFullYear()} My App. All rights reserved.

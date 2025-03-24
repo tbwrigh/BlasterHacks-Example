@@ -34,7 +34,6 @@
 	};
 </script>
 
-<!-- Use h-full instead of min-h-screen so it fits within the parent's height -->
 <div class="h-full flex items-center justify-center">
 	<div class="w-full max-w-md bg-white rounded-lg shadow-md p-8 border border-gray-200">
 		<h2 class="text-2xl font-semibold text-center mb-6">Login</h2>
