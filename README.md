@@ -37,6 +37,7 @@ Jump to any of the following sections:
   - [Set Up Post Controller](#set-up-the-post-controller)
     - [Checking Auth](#checking-auth)
     - [Get Posts](#get-post-endpoint)
+    - [Delete Posts and Comments](#delete-posts-and-comments)
 - [Coding the Frontend](#coding-the-frontend)
   - [Expanding our Gitignore](#expanding-our-gitignore)
   - [Start Our SvelteKit Project](#start-our-sveltekit-project)
@@ -1184,6 +1185,70 @@ async def get_posts(request: Request):
     return JSONResponse(
         status_code=200,
         content={"posts": posts}
+    )
+```
+
+### Delete Posts and Comments
+
+We should be able to delete our own comments or posts. 
+
+To do this add the following to the post handler:
+
+```python
+@router.delete("/{post_id}")
+async def delete_post(request: Request, post_id: int, token_data: dict = Depends(validate_token)):
+    """
+    Delete a post
+    """
+
+    with Session(request.app.state.db) as session:
+        post = session.query(Post).filter(Post.id == post_id).first()
+        if not post:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Post not found"}
+            )
+        
+        if post.user_id != token_data["user_id"]:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Unauthorized"}
+            )
+
+        session.delete(post)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Post deleted"}
+    )
+
+@router.delete("/comment/{comment_id}")
+async def delete_comment(request: Request, comment_id: int, token_data: dict = Depends(validate_token)):
+    """
+    Delete a comment
+    """
+
+    with Session(request.app.state.db) as session:
+        comment = session.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Comment not found"}
+            )
+        
+        if comment.user_id != token_data["user_id"]:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Unauthorized"}
+            )
+
+        session.delete(comment)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Comment deleted"}
     )
 ```
 
