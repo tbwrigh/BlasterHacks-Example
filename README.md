@@ -5,6 +5,8 @@ This project is meant to be a starting point for anyone who doesn't have experie
 
 Before we jump into building our demo project and learning about all the tools to hlpe you succeed I'd like to put a little disclaimer, this guide was written on a Mac. All tools, code, and tricks were tested on a Mac, so if you are on Windows or Linux be warned this isn't tested (but it should all still work).
 
+Another disclaimer: This is designed as a hackathon project. It does not follow best practices for managing secrets, using secure passwords, CORS policies, login systems, etc. It is meant to be a quick and dirty method of getting a functional application.
+
 
 Jump to any of the following sections:
 
@@ -532,6 +534,12 @@ We also will use SQLAlchemy and Alembic to manage our database. To install these
 pip install sqlalchemy alembic
 ```
 
+We will also use PyJWT to make and verify JWTs. To install it run:
+
+```bash
+pip install pyjwt
+```
+
 We should track our Python dependencies. To do that we can run:
 
 ```bash
@@ -743,6 +751,392 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+```
+
+## Our First Controller
+
+The first controller we will add is the users controller. We need a controller to register users and log in users. Let's make a folder called handlers in the backend folder.
+
+In the handlers folder, add `user_handler.py` and to that add the following contents:
+
+```python
+from fastapi import APIRouter, Request
+
+router = APIRouter(prefix="/user")
+
+@router.post("/login")
+async def login(request: Request):
+    """
+    Login a user
+    """
+    return {"message": "Login successful"}
+
+@router.post("/register")
+async def register(request: Request):
+    """
+    Register a new user
+    """
+    return {"message": "User registered"}
+```
+
+To connect this to the main app, we need to add the following line in `main.py` under the CORS middleware are set up.
+
+```python
+app.include_router(user_handler.router)
+```
+
+We'll also need to import the user_handler so we'll add the following import as well:
+
+```python
+from handlers import user_handler
+```
+
+### Finishing /register
+
+First we need to make it take a username, email, and password, then we need to add it to the database or return an error if the email is already used.
+
+First add the following imports:
+
+```python
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+import hashlib
+
+from models.models import User
+```
+
+Then above the `/register` endpoint add the following code to define the parameters required for the request:
+
+```python
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+```
+
+Lastly, let's update the function to require our body, check if there is a user with the email already, then if not create the user.
+
+```python
+@router.post("/register")
+async def register(request: Request, register_request: RegisterRequest):
+    """
+    Register a new user
+    """
+    
+    # Check if the email already exists for a user
+    with Session(request.app.state.db) as session:
+        user = session.query(User).filter(User.email == register_request.email).first()
+        if user:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Email already exists"}
+            )
+                
+    # Create a new user
+    with Session(request.app.state.db) as session:
+        hashed_password = hashlib.sha256(register_request.password.encode()).hexdigest()
+        user = User(
+            name=register_request.username,
+            email=register_request.email,
+            password_hash=hashed_password
+        )
+
+        session.add(user)
+        session.commit()
+    
+    return JSONResponse(
+        status_code=200,
+        content={"message": "User registered successfully"}
+    )
+```
+
+### Finishing Login
+
+For login we want to make the request take the email and password. Let's make a model for the request. 
+
+```python
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+```
+
+We need to make a JWT here so let's add an import:
+
+```python
+import jwt
+```
+
+Then let's update the login function body to check if the user exists, if the password is correct, and then return a token for the user.
+
+```python
+@router.post("/login")
+async def login(request: Request, login_request: LoginRequest):
+    """
+    Login a user
+    """
+    
+    with Session(request.app.state.db) as session:
+        user = session.query(User).filter(User.email == login_request.email).first()
+        if not user:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "User not found"}
+            )
+        
+        hashed_password = hashlib.sha256(login_request.password.encode()).hexdigest()
+        if user.password_hash != hashed_password:
+            return JSONResponse(
+                status_code=400,
+                content={"message": "Invalid password"}
+            )
+        
+        token = jwt.encode({
+            "user_id": user.id,
+            "email": user.email
+        }, "secret", algorithm="HS256")
+
+    return JSONResponse(
+        status_code=200,
+        content={"token": token}
+    )
+```
+
+## Post and Comment Models
+
+We need to have a model for Community Posts and Comments. Let's go add the folllowing to our `models.py`. 
+
+```python
+class Post(Base):
+    __tablename__ = 'posts'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    user = relationship("User", back_populates="posts")
+
+class Comment(Base):
+    __tablename__ = 'comments'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    content = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
+
+    user = relationship("User", back_populates="comments")
+    post = relationship("Post", back_populates="comments")
+```
+
+We also need to add some improts. Add:
+
+```python
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+```
+
+Then let's create a revision for this change in models by running:
+
+```bash
+alembic revision --autogenerate -m "Create Users and Posts"
+```
+
+If you are not using Docker, run:
+
+```bash
+alembic upgrade head
+```
+
+## Set Up the Post Controller
+
+Make a file in handlers called `post_handler.py`. To it add the following:
+
+```python
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel
+
+from models.models import Post, Comment
+
+from sqlalchemy.orm import Session
+
+router = APIRouter(prefix="/post")
+
+class CreatePostRequest(BaseModel):
+    title: str
+    content: str
+
+@router.post("/")
+async def create_post(request: Request, create_post_request: CreatePostRequest):
+    """
+    Create a post
+    """
+    
+    with Session(request.app.state.db) as session:
+        post = Post(
+            title=create_post_request.title,
+            content=create_post_request.content,
+            user_id=1
+        )
+        session.add(post)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Post created"}
+    )
+
+class CreateCommentRequest(BaseModel):
+    content: str
+    post_id: int
+
+@router.post("/comment")
+async def create_comment(request: Request, create_comment_request: CreateCommentRequest):
+    """
+    Create a comment
+    """
+    
+    with Session(request.app.state.db) as session:
+        comment = Comment(
+            content=create_comment_request.content,
+            user_id=1,
+            post_id=create_comment_request.post_id
+        )
+        session.add(comment)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Comment created"}
+    )
+```
+
+We also need to add the post handler to our `main.py` we need to import the handler and then add it as a router.
+
+Add the import:
+
+```python
+from handlers import user_handler, post_handler
+```
+
+Add the router:
+
+```python
+app.include_router(post_handler.router)
+```
+
+This sets up the creation for posts and comments, but it is flawed. We don't check that the user is logged in and we always use a user id of 1. 
+
+### Checking Auth
+
+Let's add a utils folder in our backend, then add a file called `auth.py`. To that file add:
+
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+import jwt
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def validate_token(token: str = Depends(oauth2_scheme)):
+    token_data = jwt
+    try:
+        token_data = jwt.decode(token, "secret", algorithms=["HS256"])
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    return token_data 
+```
+
+This will be used to decode and validate tokens. Let's add this to our endpoints.
+
+Add the following import to the post handler:
+
+```python
+from fastapi import Depends
+from utils.auth import validate_token
+```
+
+Then to both of our method signatures add:
+
+```python
+token_data: dict = Depends(validate_token)
+```
+
+Where we previously hard coded 1 for the user_id we can now use:
+
+```python
+token_data["user_id"]
+```
+
+Our post handler should now look like:
+
+```python
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import JSONResponse
+
+from pydantic import BaseModel
+
+from models.models import Post, Comment
+
+from sqlalchemy.orm import Session
+
+from utils.auth import validate_token
+
+router = APIRouter(prefix="/post")
+
+class CreatePostRequest(BaseModel):
+    title: str
+    content: str
+
+@router.post("/")
+async def create_post(request: Request, create_post_request: CreatePostRequest, token_data: dict = Depends(validate_token)):
+    """
+    Create a post
+    """
+    
+    with Session(request.app.state.db) as session:
+        post = Post(
+            title=create_post_request.title,
+            content=create_post_request.content,
+            user_id=token_data["user_id"]
+        )
+        session.add(post)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Post created"}
+    )
+
+class CreateCommentRequest(BaseModel):
+    content: str
+    post_id: int
+
+@router.post("/comment")
+async def create_comment(request: Request, create_comment_request: CreateCommentRequest, token_data: dict = Depends(validate_token)):
+    """
+    Create a comment
+    """
+    
+    with Session(request.app.state.db) as session:
+        comment = Comment(
+            content=create_comment_request.content,
+            user_id=token_data["user_id"],
+            post_id=create_comment_request.post_id
+        )
+        session.add(comment)
+        session.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Comment created"}
+    )
 ```
 
 # Coding the Frontend
