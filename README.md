@@ -19,11 +19,18 @@ Jump to any of the following sections:
   - [Sharing the Repo](#sharing-the-repo)
   - [Cloning the Repo](#cloning-the-repo)
   - [Making Your First Commit](#lets-make-our-first-commits)
+- [Docker Set Up (optional)](#docker-set-up-optional)
 - [Coding the Backend](#coding-the-backend)
   - [Set Up a Virtual Environment](#set-up-a-virtual-environment)
   - [Install Dependencies](#install-our-dependencies)
+  - [Our First Endpoint](#making-our-first-endpoint)
+  - [Initialize Alembic](#initialize-alembic)
+  - [Backend Docker Set Up](#set-up-docker-for-backend)
+  - [Connecting to the DB](#connect-to-our-database)
+  - [CORS](#dealing-with-cors)
 - [Coding the Frontend](#coding-the-frontend)
   - [Expanding our Gitignore](#expanding-our-gitignore)
+  - [Start Our SvelteKit Project](#start-our-sveltekit-project)
 
 # Tools
 
@@ -429,6 +436,44 @@ If you want more details about merge conflicts and resolving them, checkout [thi
 
 </details>
 
+# Docker Set Up (optional)
+
+In the root of the repository make a file called `docker-compose.yml` and in it paste the following:
+
+```yml
+version: '3.9'
+
+services:
+  db:
+    container_name: db
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  db-volume:
+```
+
+This will set up docker compose with one container for PostgreSQL. We will add more to this later, but for now this is all the docker set up we need. 
+
+For now, let's get this running as is. To start docker we can run:
+
+```bash
+docker compose up -d
+```
+
 # Coding the Backend
 
 First, let's start by making a backend folder in the root of our repository. Additionally let's add a file called `main.py` inside the backend folder.
@@ -481,6 +526,12 @@ Our main web server will be built with FastAPI. To install FastAPI run:
 pip install "fastapi[standard]"
 ```
 
+We also will use SQLAlchemy and Alembic to manage our database. To install these we can run:
+
+```bash
+pip install sqlalchemy alembic
+```
+
 We should track our Python dependencies. To do that we can run:
 
 ```bash
@@ -491,6 +542,207 @@ If we wanted to install the dependencies tracked in the requirements.txt we can 
 
 ```bash
 pip install -r requirements.txt
+```
+
+## Making Our First Endpoint
+
+In our `main.py` we will add the following code:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    """
+    Returns the API version
+    """
+    return {"API Version": "1.0.0"}
+```
+
+This will make it so that when we hit the `/` path on our server, we will get the response `{"API Version": "1.0.0"}`. 
+
+To run our server we can run:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Then we can hit our API at `http://localhost:8000/`
+
+## Initialize Alembic
+
+We need to set up Alembic. We can do that by running the following command in the backend folder:
+
+```bash
+alembic init alembic
+```
+
+An folder called `alembic` will be created, in that folder open `env.py`. 
+
+Under `from alembic import context` we should add:
+
+```python
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../models')))
+from models import Base
+```
+
+Then we will find a line with `target_metadata = None` make that:
+
+```python
+target_metadata = Base.metadata
+```
+
+In the `alembic.ini` file we will set the `sqlalchemy.url`. 
+
+If you are using Docker set it to:
+
+```ini
+sqlalchemy.url = postgresql://postgres:password@db/postgres
+```
+
+If you are not using Docker:
+
+```ini
+sqlalchemy.url = sqlite:///./app.db
+```
+
+Now we need to make a model for object we want to store in our database. For now let's just have a user model. Make models folder in the backend. Inside that models folder make a file called `models.py`. In it put the following contents:
+
+```python
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+```
+
+Now we need to make a migration. To do this run:
+
+```bash
+alembic revision --autogenerate -m "Initial migration"
+```
+
+To apply the migration, if we are not using Docker, then run:
+
+```bash
+alembic upgrade head
+```
+
+If we are using Docker, we will have composer handle running the migrations for us.
+
+If you are not using Docker add the following line to your `.gitignore`:
+
+```
+*.db
+```
+
+## Set up Docker for Backend
+
+In the backend folder make file called `Dockerfile` and put the following into it:
+
+```dockerfile
+# Use an official Python runtime as a parent image
+FROM python:3.13-slim
+
+# Set the working directory in the container
+WORKDIR /code
+
+COPY requirements.txt /code
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+COPY . /code
+
+# Run app.py when the container launches
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+Then in our `docker-compose.yml` we need to add some entries under services:
+
+```yml
+  migration:
+    container_name: migration
+    build: ./backend
+    command: /bin/sh -c "alembic upgrade head"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@database:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+## Connect to our Database
+
+We need to add 2 imports to our `main.py`
+
+```python
+from contextlib import asynccontextmanager
+
+from sqlalchemy import create_engine
+```
+
+Then add the following:
+
+```python
+DB_URL = "sqlite:///./app.db"
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    engine = create_engine(DB_URL)
+    app.state.db = engine
+    try:
+        yield
+    finally:
+        engine.dispose()
+```
+
+The `DB_URL` should be whatever we put in for the value in our `alembic.ini`.
+
+Then our app definition becomes:
+
+```python
+app = FastAPI(lifespan=lifespan)
+```
+
+## Dealing with CORS
+
+In our `main.py` we need to add another import:
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+```
+
+Then add the following below the definition of our app:
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 ```
 
 # Coding the Frontend
@@ -519,5 +771,7 @@ Enter the frontend folder and run:
 ```bash
 npm install
 ```
+
+
 
 
