@@ -1279,6 +1279,41 @@ Enter the frontend folder and run:
 npm install
 ```
 
+## Installing Flowbite
+
+Flowbite is going to be our component library to simplify our frontend development.
+
+To do this we need to run the following commands:
+
+```bash
+npm i -D flowbite-svelte flowbite
+npm i -D flowbite-svelte-icons
+```
+
+Then to `app.css` inside the src folder in the frontend folder, we need to add:
+
+```css
+@plugin 'flowbite/plugin';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary-50: #fff5f2;
+  --color-primary-100: #fff1ee;
+  --color-primary-200: #ffe4de;
+  --color-primary-300: #ffd5cc;
+  --color-primary-400: #ffbcad;
+  --color-primary-500: #fe795d;
+  --color-primary-600: #ef562f;
+  --color-primary-700: #eb4f27;
+  --color-primary-800: #cc4522;
+  --color-primary-900: #a5371b;
+}
+
+@source "../node_modules/flowbite-svelte/dist";
+```
+
+
 
 
 
