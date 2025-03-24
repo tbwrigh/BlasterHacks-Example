@@ -692,6 +692,8 @@ Then in our `docker-compose.yml` we need to add some entries under services:
     depends_on:
       db:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
 ```
 
 ## Connect to our Database
