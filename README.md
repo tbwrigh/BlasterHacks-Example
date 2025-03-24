@@ -2,7 +2,6 @@
 
 This project is meant to be a starting point for anyone who doesn't have experience coding. It will cover a bunch of topics to help you get started at this hackathon. While we would prefer this to be more a of areference for you to gain technical insights and tips as you build your own project, feel free to build this as your project with your own unique twists if you so choose.
 
-
 Before we jump into building our demo project and learning about all the tools to hlpe you succeed I'd like to put a little disclaimer, this guide was written on a Mac. All tools, code, and tricks were tested on a Mac, so if you are on Windows or Linux be warned this isn't tested (but it should all still work).
 
 Another disclaimer: This is designed as a hackathon project. It does not follow best practices for managing secrets, using secure passwords, CORS policies, login systems, etc. It is meant to be a quick and dirty method of getting a functional application.
@@ -38,6 +37,7 @@ Jump to any of the following sections:
     - [Checking Auth](#checking-auth)
     - [Get Posts](#get-post-endpoint)
     - [Delete Posts and Comments](#delete-posts-and-comments)
+  - [Ideas to Expand](#ideas-to-expand-on-this)
 - [Coding the Frontend](#coding-the-frontend)
   - [Expanding our Gitignore](#expanding-our-gitignore)
   - [Start Our SvelteKit Project](#start-our-sveltekit-project)
@@ -1251,6 +1251,18 @@ async def delete_comment(request: Request, comment_id: int, token_data: dict = D
         content={"message": "Comment deleted"}
     )
 ```
+
+## Ideas to Expand On This
+
+Congratulations, you have fully set up the backend!
+
+You have now set up multiple models, created multiple handlers with multiple types of routes, and have a basic form of auth.
+
+With this base set up you can do a lot! One simple modification might be optionally allowing an image url for a post. 
+
+Maybe you want to make users be able to have a profile picture. 
+
+Or you could add tags to posts. 
 
 # Coding the Frontend
 
